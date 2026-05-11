@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Project Specific
+.gemini/
+temp_elkbledom/
+test_speed_methods.py
+test_rust_speed.py
+btsnoop_hci.log
+*.webp
+*.png
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
