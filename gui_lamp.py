@@ -9,7 +9,8 @@ class LampGUI(ctk.CTk):
         super().__init__()
 
         self.title("MELK-OA10 Controller")
-        self.geometry("500x750")
+        self.geometry("500x660")
+        self.resizable(False, False)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -23,6 +24,13 @@ class LampGUI(ctk.CTk):
         self.thread.start()
 
         self.setup_ui()
+        self.center_window()
+
+    def center_window(self, width=500, height=660):
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
 
     def start_async_loop(self):
         asyncio.set_event_loop(self.loop)
@@ -46,7 +54,7 @@ class LampGUI(ctk.CTk):
         self.scan_btn = ctk.CTkButton(self.top_frame, text="🔍 Scan", width=80, command=self.start_scan)
         self.scan_btn.pack(pady=5, padx=5, side="left")
 
-        self.connect_btn = ctk.CTkButton(self, text="⚡ Connect to Lamp", font=("Roboto", 16, "bold"), height=45,
+        self.connect_btn = ctk.CTkButton(self, text="⚡ Connect to Lamp", font=("Roboto", 16, "bold"), height=40,
                                          fg_color="#27AE60", hover_color="#2ECC71", command=self.connect_lamp)
         self.connect_btn.pack(pady=10, padx=20, fill="x")
 
@@ -66,9 +74,9 @@ class LampGUI(ctk.CTk):
         self.off_btn.pack(side="left", padx=10)
 
         # AutoPlay
-        self.autoplay_btn = ctk.CTkButton(self.control_frame, text="✨ Start AutoPlay Mode", font=("Roboto", 16, "bold"), 
-                                         height=50, fg_color="#6A1B9A", hover_color="#8E24AA", command=self.start_autoplay)
-        self.autoplay_btn.pack(pady=15, padx=20, fill="x")
+        self.autoplay_btn = ctk.CTkButton(self.control_frame, text="✨ Start AutoPlay Mode", font=("Roboto", 15, "bold"), 
+                                         height=45, fg_color="#6A1B9A", hover_color="#8E24AA", command=self.start_autoplay)
+        self.autoplay_btn.pack(pady=10, padx=20, fill="x")
 
         # Sliders
         ctk.CTkLabel(self.control_frame, text="Effect Speed").pack()
@@ -92,8 +100,16 @@ class LampGUI(ctk.CTk):
                                command=lambda c=color: self.set_hex_color(c))
             btn.pack(side="left", padx=3)
 
-        self.picker_btn = ctk.CTkButton(self.control_frame, text="🎨 Custom Color Picker", command=self.pick_color)
-        self.picker_btn.pack(pady=15, padx=30, fill="x")
+        # Color Preview
+        self.preview_label = ctk.CTkLabel(self.control_frame, text="Active Color Preview", font=("Roboto", 10))
+        self.preview_label.pack(pady=(5, 0))
+        self.preview_bar = ctk.CTkFrame(self.control_frame, height=15, fg_color="#FFFFFF", corner_radius=10)
+        self.preview_bar.pack(pady=2, padx=40, fill="x")
+
+        self.picker_btn = ctk.CTkButton(self.control_frame, text="🎨 Custom Color Picker", 
+                                         height=38, font=("Roboto", 13, "bold"),
+                                         command=self.pick_color)
+        self.picker_btn.pack(pady=10, padx=30, fill="x")
 
     def start_scan(self):
         self.scan_btn.configure(text="Scanning...", state="disabled")
@@ -153,16 +169,27 @@ class LampGUI(ctk.CTk):
 
     def set_hex_color(self, hex_color):
         if not self.controller.client or not self.controller.client.is_connected: return
+        
+        # Update UI Preview
+        self.preview_bar.configure(fg_color=hex_color)
+        
         r = int(hex_color[1:3], 16)
         g = int(hex_color[3:5], 16)
         b = int(hex_color[5:7], 16)
         self.run_async(self.controller.set_color(r, g, b))
 
     def pick_color(self):
-        color = AskColor()
-        color_hex = color.get()
-        if color_hex:
-            self.set_hex_color(color_hex)
+        pick_color = AskColor(title="Pick a Custom Lamp Color")
+        # Center the dialog before .get() blocks waiting for user input
+        pick_color.update_idletasks()
+        w = pick_color.winfo_width()
+        h = pick_color.winfo_height()
+        x = (pick_color.winfo_screenwidth() // 2) - (w // 2)
+        y = (pick_color.winfo_screenheight() // 2) - (h // 2)
+        pick_color.geometry(f"+{x}+{y}")
+        color = pick_color.get()
+        if color:
+            self.set_hex_color(color)
 
     def update_brightness(self, val):
         if not self.controller.client or not self.controller.client.is_connected: return
